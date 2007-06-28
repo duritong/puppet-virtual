@@ -26,26 +26,34 @@ class vserver_host {
 	
 }
 
+define vs_create($in_domain) { 
+	exec { "/usr/local/bin/build_vserver \"${name}\" \"${in_domain}\"":
+		creates => "/etc/vservers/${name}",
+		require => File["/usr/local/bin/build_vserver"],
+		alias => "vs_create_${name}"
+	}
+}
+		
+
 # ensure: present, stopped, running
 define vserver($ensure, $in_domain = $domain) {
 	case $ensure {
-		present: {
-			exec { "/usr/local/bin/build_vserver \"${name}\" \"${in_domain}\"":
-				creates => "/etc/vservers/${name}",
-				require => File["/usr/local/bin/build_vserver"],
-			}
-		}
+		present: { vs_create{$name: in_domain => $in_domain } }
+		running: { vs_create{$name: in_domain => $in_domain } }
+		stopped: { vs_create{$name: in_domain => $in_domain } }
 	}
 
 	case $ensure {
 		stopped: {
 			exec { "vserver ${name} stop":
 				onlyif => "test -e \$(readlink -f /etc/vservers/$name/run)",
+				require => Exec["vs_create_${name}"],
 			}
 		}
 		running: {
 			exec { "vserver ${name} start":
 				unless => "test -e \$(readlink -f /etc/vservers/$name/run)",
+				require => Exec["vs_create_${name}"],
 			}
 		}
 	}
