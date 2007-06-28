@@ -76,7 +76,7 @@ define vserver($ensure, $in_domain = $domain) {
 
 }
 
-define vs_interface($prefix = 24) {
+define vs_interface($prefix = 24, $dev = '') {
 	file {
 		"/etc/vservers/local-interfaces/${name}/":
 			ensure => directory,
@@ -87,9 +87,22 @@ define vs_interface($prefix = 24) {
 		"/etc/vservers/local-interfaces/${name}/prefix":
 			content => "${prefix}\n",
 			mode => 0644, owner => root, group => root;
-		"/etc/vservers/local-interfaces/${name}/nodev":
-			ensure => present,
-			mode => 0644, owner => root, group => root;
+	}
+
+	case $dev {
+		'': {
+			file { 
+				"/etc/vservers/local-interfaces/${name}/nodev":
+					ensure => present,
+					mode => 0644, owner => root, group => root;
+				"/etc/vservers/local-interfaces/${name}/dev":
+					ensure => absent;
+			}
+		}
+		default: {
+			config_file { "/etc/vservers/local-interfaces/${name}/dev": content => $dev, }
+			file { "/etc/vservers/local-interfaces/${name}/nodev": ensure => absent, }
+		}
 	}
 }
 
