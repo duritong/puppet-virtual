@@ -1,0 +1,28 @@
+#!/bin/bash
+
+NAME=$1
+DOMAIN=$2
+
+# create basic vserver
+vserver $NAME build -m debootstrap -- -d etch -m http://ftp.at.debian.org/debian
+
+# default settings
+echo $NAME >/etc/vservers/$NAME/uts/nodename
+
+# copy in some some defaults
+TARGET=/etc/vservers/$NAME/vdir/
+
+cp /etc/apt/{preferences,sources.list} $TARGET/etc/apt/
+
+# this is needed so puppet can find the puppetmaster and creates the right
+# certificate
+grep -v $NAME /etc/hosts > $TARGET/etc/hosts
+echo "127.0.0.1 $NAME.$DOMAIN $NAME" >> $TARGET/etc/hosts
+
+
+# Setup is complete, now do the post-install stuff
+vserver $NAME start
+vserver $NAME exec apt-get update
+vserver $NAME exec apt-get -y install puppet lsb-release
+
+echo "Please sign now: puppetca --sign $NAME.$DOMAIN" >&2
