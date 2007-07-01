@@ -29,54 +29,93 @@ class vserver_host {
 	
 }
 
-define vs_create($in_domain) { 
-	exec { "/usr/local/bin/build_vserver \"${name}\" \"${in_domain}\"":
-		creates => "/etc/vservers/${name}",
-		require => File["/usr/local/bin/build_vserver"],
-		alias => "vs_create_${name}"
+define vs_create($in_domain, $legacy = false) { 
+	$vs_name = $legacy ? { true => $name, false => $in_domain ? { '' => $name, default => "${name}.${in_domain}" } }
+
+	case $legacy {
+		true: {
+			exec { "/usr/local/bin/build_vserver \"${vs_name}\" \"${in_domain}\"":
+				creates => "/etc/vservers/${vs_name}",
+				require => File["/usr/local/bin/build_vserver"],
+				alias => "vs_create_${vs_name}"
+			}
+		}
+		false: {
+			exec { "/usr/local/bin/build_vserver \"${vs_name}\" \"\"":
+				creates => "/etc/vservers/${vs_name}",
+				require => File["/usr/local/bin/build_vserver"],
+				alias => "vs_create_${vs_name}"
+			}
+		}
 	}
 }
 		
 
 # ensure: present, stopped, running
-define vserver($ensure, $in_domain = $domain) {
+define vserver($ensure, $in_domain = '', $mark = '', $legacy = false) {
+	case $in_domain { '': {} 
+		default: { err("${fqdn}: vserver ${name} uses deprecated \$in_domain" ) }
+	}
+	$vs_name = $legacy ? { true => $name, false => $in_domain ? { '' => $name, default => "${name}.${in_domain}" } }
+	$if_dir = "/etc/vservers/${vs_name}/interfaces/"
+	$mark_file = "/etc/vservers/${vs_name}/apps/init/mark"
+
 	# TODO: wasn't there a syntax for using arrays as case selectors??
 	case $ensure {
-		present: { vs_create{$name: in_domain => $in_domain } }
-		running: { vs_create{$name: in_domain => $in_domain } }
-		stopped: { vs_create{$name: in_domain => $in_domain } }
-		default: { err("${fqdn}: vserver(${name}): unknown ensure '${ensure}'") }
+		present: { vs_create{$name: in_domain => $in_domain, legacy => $legacy, } }
+		running: { vs_create{$name: in_domain => $in_domain, legacy => $legacy, } }
+		stopped: { vs_create{$name: in_domain => $in_domain, legacy => $legacy, } }
+		default: { err("${fqdn}: vserver(${vs_name}): unknown ensure '${ensure}'") }
 	}
 
-	file { "/etc/vservers/${name}/interfaces/":
+	file { $if_dir:
 		ensure => directory, checksum => mtime,
+		require => Exec["vs_create_${vs_name}"],
 	}
 
 	case $ensure {
 		stopped: {
-			exec { "vserver ${name} stop":
-				onlyif => "test -e \$(readlink -f /etc/vservers/$name/run)",
-				require => Exec["vs_create_${name}"],
+			exec { "vserver ${vs_name} stop":
+				onlyif => "test -e \$(readlink -f /etc/vservers/${vs_name}/run || echo /doesntexist )",
+				require => Exec["vs_create_${vs_name}"],
 			}
+			file { $mark_file: ensure => absent, }
 		}
 		running: {
-			exec { "vserver ${name} start":
-				unless => "test -e \$(readlink -f /etc/vservers/$name/run)",
-				require => Exec["vs_create_${name}"],
+			exec { "vserver ${vs_name} start":
+				unless => "test -e \$(readlink -f /etc/vservers/${vs_name}/run)",
+				require => Exec["vs_create_${vs_name}"],
 			}
 
-			exec { "vserver ${name} restart":
+			exec { "vserver ${vs_name} restart":
 				refreshonly => true,
-				require => Exec["vs_create_${name}"],
-				alias => "vs_restart_${name}",
-				subscribe => File["/etc/vservers/${name}/interfaces/"]
+				require => Exec["vs_create_${vs_name}"],
+				alias => "vs_restart_${vs_name}",
+				subscribe => File[$if_dir],
+			}
+
+			case $mark {
+				'': {
+					err("${fqdn}: vserver ${vs_name} set to running, but won't be started on reboot without mark!")
+					file { $mark_file: ensure => absent, }
+				}
+				default: { 
+					config_file { "/etc/vservers/${vs_name}/apps/init/mark":
+						content => "${mark}\n",
+						require => Exec["vs_create_${vs_name}"],
+					}
+				}
 			}
 		}
 	}
 
 }
 
+# Changeing stuff with this define won't do much good, since it relies on
+# restarting the vservers to do the work, which won't clean up orphaned
+# interfaces
 define vs_interface($prefix = 24, $dev = '') {
+
 	file {
 		"/etc/vservers/local-interfaces/${name}/":
 			ensure => directory,
@@ -111,7 +150,7 @@ define vs_ip($vserver, $ip, $ensure) {
 		connected: {
 			file { "/etc/vservers/${vserver}/interfaces/${name}":
 				ensure => "/etc/vservers/local-interfaces/${ip}/",
-				require => File["/etc/vservers/local-interfaces/${ip}/"], 
+				require => [ File["/etc/vservers/local-interfaces/${ip}/"], Exec["vs_create_${vserver}"] ],
 				notify => Exec["vs_restart_${vserver}"],
 			}
 		}
