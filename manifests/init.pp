@@ -52,7 +52,7 @@ define vs_create($in_domain, $legacy = false) {
 		
 
 # ensure: present, stopped, running
-define vserver($ensure, $in_domain = '', $mark = '', $legacy = false) {
+define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) {
 	case $in_domain { '': {} 
 		default: { err("${fqdn}: vserver ${name} uses deprecated \$in_domain" ) }
 	}
@@ -68,9 +68,26 @@ define vserver($ensure, $in_domain = '', $mark = '', $legacy = false) {
 		default: { err("${fqdn}: vserver(${vs_name}): unknown ensure '${ensure}'") }
 	}
 
-	file { $if_dir:
-		ensure => directory, checksum => mtime,
-		require => Exec["vs_create_${vs_name}"],
+	file {
+		$if_dir:
+			ensure => directory, checksum => mtime,
+			require => Exec["vs_create_${vs_name}"];
+	}
+
+	config_file {
+		"/etc/vservers/${vs_name}/context":
+			content => "${context}\n",
+			notify => Exec["vs_restart_${vs_name}"],
+			require => Exec["vs_create_${vs_name}"];
+		"/etc/vservers/${vs_name}/uts/nodename":
+			content => "${vs_name}\n",
+			notify => Exec["vs_restart_${vs_name}"],
+			require => Exec["vs_create_${vs_name}"];
+		"/etc/vservers/${vs_name}/name":
+			content => "${vs_name}\n",
+			# Changing this needs no restart
+			# notify => Exec["vs_restart_${vs_name}"],
+			require => Exec["vs_create_${vs_name}"];
 	}
 
 	case $ensure {
@@ -78,6 +95,8 @@ define vserver($ensure, $in_domain = '', $mark = '', $legacy = false) {
 			exec { "vserver ${vs_name} stop":
 				onlyif => "test -e \$(readlink -f /etc/vservers/${vs_name}/run || echo /doesntexist )",
 				require => Exec["vs_create_${vs_name}"],
+				# fake the restart exec in the stopped case, so the dependencies are fulfilled
+				alias => "vs_restart_${vs_name}",
 			}
 			file { $mark_file: ensure => absent, }
 		}
