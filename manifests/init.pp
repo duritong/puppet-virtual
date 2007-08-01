@@ -13,6 +13,8 @@ file {
 		mode => 0755, owner => root, group => root;
 }
 
+modules_dir{ [ "virtual", "virtual/contexts" ]: }
+
 class vserver_host {
 
 	package { [ 'util-vserver', debootstrap ]: ensure => installed, }
@@ -24,9 +26,6 @@ class vserver_host {
 			require => [ Package['util-vserver'], Package[debootstrap],
 				# this comes from dbp module and is the most current puppet deb
 				File["/var/lib/puppet/modules/dbp/puppet_current.deb"] ];
-		"/var/lib/puppet/modules/virtual":
-			ensure => directory, purge => true, force => true,
-			mode => 0755, owner => root, group => root;
 		"/etc/vservers/local-interfaces/":
 			ensure => directory,
 			mode => 0755, owner => root, group => root;
@@ -84,6 +83,10 @@ define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) 
 			content => "${context}\n",
 			notify => Exec["vs_restart_${vs_name}"],
 			require => Exec["vs_create_${vs_name}"];
+		# create illegal configuration, when two vservers have the same context
+		# number
+		"/var/lib/puppet/modules/virtual/contexts/${context}":
+			content => "\n";
 		"/etc/vservers/${vs_name}/uts/nodename":
 			content => "${vs_name}\n",
 			notify => Exec["vs_restart_${vs_name}"],
