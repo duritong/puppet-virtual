@@ -21,13 +21,12 @@ class vserver_host {
 		"/usr/local/bin/build_vserver":
 			source => "puppet://$servername/virtual/build_vserver",
 			mode => 0755, owner => root, group => root,
-			require => [ Package['util-vserver'], Package[debootstrap], File["/var/lib/puppet/modules/virtual/puppet_current.deb"] ];
+			require => [ Package['util-vserver'], Package[debootstrap],
+				# this comes from dbp module and is the most current puppet deb
+				File["/var/lib/puppet/modules/dbp/puppet_current.deb"] ];
 		"/var/lib/puppet/modules/virtual":
-			ensure => directory, purge => true,
+			ensure => directory, purge => true, force => true,
 			mode => 0755, owner => root, group => root;
-		"/var/lib/puppet/modules/virtual/puppet_current.deb":
-			source => "puppet://$servername/virtual/puppet_current.deb",
-			mode => 0644, owner => root, group => root;
 		"/etc/vservers/local-interfaces/":
 			ensure => directory,
 			mode => 0755, owner => root, group => root;

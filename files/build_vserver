@@ -18,7 +18,7 @@ cp /etc/apt/{preferences,sources.list} $TARGET/etc/apt/
 # certificate
 grep -v $NAME /etc/hosts > $TARGET/etc/hosts
 echo "127.0.0.1 $NAME.$DOMAIN $NAME" >> $TARGET/etc/hosts
-cp /var/lib/puppet/modules/virtual/puppet_current.deb $TARGET/root/
+cp /var/lib/puppet/modules/dbp/puppet_current.deb $TARGET/root/
 
 # Setup is complete, now do the post-install stuff
 vserver $NAME start
