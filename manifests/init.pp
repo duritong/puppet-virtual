@@ -36,6 +36,8 @@ class vserver_host {
 define vs_create($in_domain, $legacy = false) { 
 	$vs_name = $legacy ? { true => $name, false => $in_domain ? { '' => $name, default => "${name}.${in_domain}" } }
 
+	case $vs_name { '': { fail ( "Cannot create VServer with empty name" ) } }
+
 	case $legacy {
 		true: {
 			exec { "/usr/local/bin/build_vserver \"${vs_name}\" \"${in_domain}\"":
@@ -63,6 +65,8 @@ define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) 
 	$vs_name = $legacy ? { true => $name, false => $in_domain ? { '' => $name, default => "${name}.${in_domain}" } }
 	$if_dir = "/etc/vservers/${vs_name}/interfaces/"
 	$mark_file = "/etc/vservers/${vs_name}/apps/init/mark"
+
+	case $vs_name { '': { fail ( "Cannot create VServer with empty name" ) } }
 
 	# TODO: wasn't there a syntax for using arrays as case selectors??
 	case $ensure {
