@@ -15,6 +15,17 @@ file {
 
 modules_dir{ [ "virtual", "virtual/contexts" ]: }
 
+class xen::host {
+	munin::remoteplugin {
+		xen_mem:	
+			source => "puppet://$servername/virtual/munin/xen_mem",
+			config => "user root";
+		xen_vm:
+			source => "puppet://$servername/virtual/munin/xen_vm",
+			config => "user root";
+	}
+}
+
 class vserver_host {
 
 	package { [ 'util-vserver', debootstrap ]: ensure => installed, }
