@@ -15,7 +15,7 @@ file {
 
 modules_dir{ [ "virtual", "virtual/contexts" ]: }
 
-class xen::host {
+class munin::plugins::xen {
 	munin::remoteplugin {
 		xen_mem:	
 			source => "puppet://$servername/virtual/munin/xen_mem",
