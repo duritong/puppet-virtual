@@ -2,7 +2,7 @@
 # Authored by abnormaliti with contributions by daniel@nsp.co.nz and mwr
 	
 # This defines the fact "virtual" with the possible values of "physical",
-# "vmware", "vmware-server", "xenu", or "xen0"
+# "vmware", "vmware_server", "xenu", or "xen0"
 	
 Facter.add("virtual") do
 	confine :kernel => :linux

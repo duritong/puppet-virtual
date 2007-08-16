@@ -1,2 +1,61 @@
+Overview
+========
+
+Virtualisation technologies have to be taken into account when configuring
+systems to enable optimal performance and minimal resource consumption. This
+module enables detection of virtualisation technologies and brings along
+classes to react to specific implementations.
+
 See http://reductivelabs.com/trac/puppet/wiki/VirtualRecipe for details about
 this module.
+
+Technology detection
+--------------------
+
+The "virtual" fact can take these values:
+
+	* physical: no virtualisation technologies
+	* vmware: a VMware guest
+	* vmware_server: a VMware host
+	* xen0: dom0, the priviledged XEN Management Domain
+	* xenu: domU, a XEN guest
+
+VServer
+-------
+
+The Linux-VServer project maintains a lightweight isolation container as patch
+to current Linux kernels at http://www.linux-vserver.org/ .
+
+The vserver fact can detect vserver "host" and "guest" status. 
+
+This module provides classes and defines for managing vserver guests in vserver.pp
+
+
+XEN
+---
+
+For details see http://www.xensource.org/
+
+Beyond detection, this module currently only brings along the class
+munin::plugins::xen to install the xen_mem and xen_vm munin plugins.
+
+VServer Types
+=============
+
+On all vserver hosts, the class vserver::host should be installed. This brings
+along the infrastructure and files for the guest configuration types.
+
+
+
+
+
+TODO
+====
+
+Split xen and vserver specific functionality into separate modules?
+
+Add XEN guest configuration and initialisation.
+
+Detect XEN HVM container for fact::virtual.
+
+Collect various VServer and XEN bits from dbp and integrate here.
