@@ -10,11 +10,6 @@ file {
 
 modules_dir{ "virtual/contexts": }
 
-class vserver_host {
-	err ( "vserver_host is deprecated, use vserver::host instead" )
-	include vserver::host
-}
-
 class vserver::host {
 
 	package { [ 'util-vserver', debootstrap ]: ensure => installed, }
