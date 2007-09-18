@@ -172,6 +172,11 @@ define vs_interface($prefix = 24, $dev = '') {
 }
 
 define vs_ip($vserver, $ip, $ensure) {
+	err("$fqdn is using deprecated vs_ip instead of vs_ip_binding for $name")
+	vs_ip_binding { $name: vserver => $vserver, ip => $ip, ensure => $ensure }
+}
+
+define vs_ip_binding($vserver, $ip, $ensure) {
 	case $ensure {
 		connected: {
 			file { "/etc/vservers/${vserver}/interfaces/${name}":
