@@ -13,3 +13,26 @@ class munin::plugins::xen {
 	}
 }
 
+class xen::domain {
+	# install the special libc and parameters to enable it
+	$xen_ensure = $virtual ? {
+		'xen0' => present,
+		'xenu' => present,
+		default => 'absent'
+	}
+
+	case $ensure {
+		'absent': { err("xen::domain configured, but not detected") }
+	}
+
+	package { libc6-xen:
+		ensure => $xen_ensure,
+	}
+
+	config_file {
+		"/etc/ld.so.conf.d/nosegneg.conf":
+			ensure => $xen_ensure,
+			content => "hwcap 0 nosegneg\n",
+	}
+
+}
