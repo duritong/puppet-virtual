@@ -2,12 +2,6 @@
 # Copyright (C) 2007 David Schmitt <david@schmitt.edv-bus.at>
 # See LICENSE for the full license granted to you.
 
-file {
-	"$rubysitedir/facter/vserver.rb":
-		source => "puppet://$servername/virtual/facter/vserver.rb",
-		mode => 0755, owner => root, group => root;
-}
-
 modules_dir{ "virtual/contexts": }
 
 class vserver::host {
