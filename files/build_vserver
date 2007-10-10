@@ -24,7 +24,8 @@ cp /var/lib/puppet/modules/dbp/puppet_current.deb $TARGET/var/lib/puppet/modules
 # Setup is complete, now do the post-install stuff
 vserver $NAME start
 vserver $NAME exec dselect update
-vserver $NAME exec apt-get -y install lsb-release
+# install a few packages needed for facter
+vserver $NAME exec apt-get -y install lsb-release iproute
 vserver $NAME exec dpkg --install var/lib/puppet/modules/dbp/puppet_current.deb
 vserver $NAME exec apt-get -fy install
 
