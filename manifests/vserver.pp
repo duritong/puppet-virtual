@@ -52,10 +52,14 @@ define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) 
 		default: { err("${fqdn}: vserver ${name} uses deprecated \$in_domain" ) }
 	}
 	$vs_name = $legacy ? { true => $name, false => $in_domain ? { '' => $name, default => "${name}.${in_domain}" } }
+	case $vs_name { '': { fail ( "Cannot create VServer with empty name" ) } }
+
 	$if_dir = "/etc/vservers/${vs_name}/interfaces/"
 	$mark_file = "/etc/vservers/${vs_name}/apps/init/mark"
 
-	case $vs_name { '': { fail ( "Cannot create VServer with empty name" ) } }
+	$vs_name_underscores = gsub($vs_name, '\.', '_')
+	$cron_job = "/etc/cron.hourly/puppet-vserver-${vs_name_underscores}"
+
 
 	# TODO: wasn't there a syntax for using arrays as case selectors??
 	case $ensure {
@@ -69,6 +73,9 @@ define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) 
 		$if_dir:
 			ensure => directory, checksum => mtime,
 			require => Exec["vs_create_${vs_name}"];
+		$cron_job:
+			content => template("virtual/cron.hourly.vserver"),
+			mode => 0755, owner => root, group => root;
 	}
 
 	config_file {
