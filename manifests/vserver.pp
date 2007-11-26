@@ -58,7 +58,7 @@ define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) 
 	$mark_file = "/etc/vservers/${vs_name}/apps/init/mark"
 
 	$vs_name_underscores = gsub($vs_name, '\.', '_')
-	$cron_job = "/etc/cron.hourly/puppet-vserver-${vs_name_underscores}"
+	$cron_job = "/etc/cron.daily/puppet-vserver-${vs_name_underscores}"
 
 
 	# TODO: wasn't there a syntax for using arrays as case selectors??
