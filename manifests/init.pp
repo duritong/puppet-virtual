@@ -3,6 +3,6 @@
 # See LICENSE for the full license granted to you.
 # Based on the work of abnormaliti on http://reductivelabs.com/trac/puppet/wiki/VirtualRecipe
 
-modules_dir{ "virtual": }
+#modules_dir{ "virtual": }
 
 import "xen.pp"
