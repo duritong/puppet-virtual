@@ -15,7 +15,7 @@ class vserver::host {
 			require => [ Package['util-vserver'], Package[debootstrap],
 				# this comes from dbp module and is the most current puppet deb
 				File["/var/lib/puppet/modules/dbp/puppet_current.deb"] ];
-		"/etc/vservers/local-interfaces/":
+		"/etc/vservers/local-interfaces":
 			ensure => directory,
 			mode => 0755, owner => root, group => root;
 	}
@@ -54,7 +54,7 @@ define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) 
 	$vs_name = $legacy ? { true => $name, false => $in_domain ? { '' => $name, default => "${name}.${in_domain}" } }
 	case $vs_name { '': { fail ( "Cannot create VServer with empty name" ) } }
 
-	$if_dir = "/etc/vservers/${vs_name}/interfaces/"
+	$if_dir = "/etc/vservers/${vs_name}/interfaces"
 	$mark_file = "/etc/vservers/${vs_name}/apps/init/mark"
 
 	$vs_name_underscores = gsub($vs_name, '\.', '_')
@@ -111,7 +111,7 @@ define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) 
 		running: {
 			exec { "vserver ${vs_name} start":
 				unless => "test -e \$(readlink -f /etc/vservers/${vs_name}/run)",
-				require => Exec["vs_create_${vs_name}"],
+				require => [ Exec["vs_create_${vs_name}"], File["/etc/vservers/${vs_name}/context"] ]
 			}
 
 			exec { "vserver ${vs_name} restart":
@@ -144,7 +144,7 @@ define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) 
 define vs_interface($prefix = 24, $dev = '') {
 
 	file {
-		"/etc/vservers/local-interfaces/${name}/":
+		"/etc/vservers/local-interfaces/${name}":
 			ensure => directory,
 			mode => 0755, owner => root, group => root;
 		"/etc/vservers/local-interfaces/${name}/ip":
@@ -182,7 +182,7 @@ define vs_ip_binding($vserver, $ip, $ensure) {
 		connected: {
 			file { "/etc/vservers/${vserver}/interfaces/${name}":
 				ensure => "/etc/vservers/local-interfaces/${ip}/",
-				require => [ File["/etc/vservers/local-interfaces/${ip}/"], Exec["vs_create_${vserver}"] ],
+				require => [ File["/etc/vservers/local-interfaces/${ip}"], Exec["vs_create_${vserver}"] ],
 				notify => Exec["vs_restart_${vserver}"],
 			}
 		}
