@@ -25,8 +25,13 @@ class xen::domain {
 		'absent': { err("xen::domain configured, but not detected") }
 	}
 
-	package { libc6-xen:
-		ensure => $xen_ensure,
+	# This package is i386 only
+	case $architecture {
+		'i386': {
+			package { libc6-xen:
+				ensure => $xen_ensure,
+			}
+		}
 	}
 
 	config_file {
@@ -35,4 +40,23 @@ class xen::domain {
 			content => "hwcap 0 nosegneg\n",
 	}
 
+}
+
+class xen::dom0 inherits xen::domain {
+	# install the packages required for managing xen
+	# TODO: this should be followed by a reboot
+	package { 
+		[ "xen-hypervisor-3.0.3-1-$architecture",
+		  "linux-image-xen-$architecture",
+		  'libsysfs2' 
+		]:
+			ensure => present
+	}
+
+	case $virtual {
+		'xen0': {}
+		default: {
+			err("dom0 support requested, but not detected. Perhaps you need to reboot ${fqdn}?")
+		}
+	}
 }
