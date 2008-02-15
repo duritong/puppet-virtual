@@ -26,6 +26,7 @@ class xen::domain {
 	}
 
 	# This package is i386 only
+	# See also http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=379444
 	case $architecture {
 		'i386': {
 			package { libc6-xen:

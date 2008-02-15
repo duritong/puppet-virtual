@@ -18,6 +18,9 @@ class vserver::host {
 		"/etc/vservers/local-interfaces":
 			ensure => directory,
 			mode => 0755, owner => root, group => root;
+		"/etc/cron.daily/vserver-hashify":
+			source => "puppet://$servername/virtual/hashify.cron.daily",
+			mode => 0755, owner => root, group => root;
 	}
 	
 }
@@ -96,6 +99,11 @@ define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) 
 			# Changing this needs no restart
 			# notify => Exec["vs_restart_${vs_name}"],
 			require => Exec["vs_create_${vs_name}"];
+	}
+
+	file {
+		"/etc/vservers/${vs_name}/apps/vunify":
+			ensure => directory,
 	}
 
 	case $ensure {
