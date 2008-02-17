@@ -21,10 +21,6 @@ class xen::domain {
 		default => 'absent'
 	}
 
-	case $ensure {
-		'absent': { err("xen::domain configured, but not detected") }
-	}
-
 	# This package is i386 only
 	# See also http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=379444
 	case $architecture {
@@ -42,6 +38,9 @@ class xen::domain {
 	}
 
 }
+
+# always check whether xen stuff should be installed!
+include xen::domain
 
 class xen::dom0 inherits xen::domain {
 	# install the packages required for managing xen
