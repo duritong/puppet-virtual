@@ -25,21 +25,20 @@ class vserver::host {
 	
 }
 
-define vs_create($in_domain, $legacy = false) { 
+define vs_create($in_domain, $context, $legacy = false) { 
 	$vs_name = $legacy ? { true => $name, false => $in_domain ? { '' => $name, default => "${name}.${in_domain}" } }
 
 	case $vs_name { '': { fail ( "Cannot create VServer with empty name" ) } }
 
 	case $legacy {
 		true: {
-			exec { "/usr/local/bin/build_vserver \"${vs_name}\" \"${in_domain}\"":
+			exec { "/bin/false # cannot create legacy vserver ${vs_name}":
 				creates => "/etc/vservers/${vs_name}",
-				require => File["/usr/local/bin/build_vserver"],
 				alias => "vs_create_${vs_name}"
 			}
 		}
 		false: {
-			exec { "/usr/local/bin/build_vserver \"${vs_name}\" \"\"":
+			exec { "/usr/local/bin/build_vserver \"${vs_name}\" ${context}":
 				creates => "/etc/vservers/${vs_name}",
 				require => File["/usr/local/bin/build_vserver"],
 				alias => "vs_create_${vs_name}"
@@ -66,10 +65,9 @@ define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) 
 
 	# TODO: wasn't there a syntax for using arrays as case selectors??
 	case $ensure {
-		present: { vs_create{$name: in_domain => $in_domain, legacy => $legacy, } }
-		running: { vs_create{$name: in_domain => $in_domain, legacy => $legacy, } }
-		stopped: { vs_create{$name: in_domain => $in_domain, legacy => $legacy, } }
-		default: { err("${fqdn}: vserver(${vs_name}): unknown ensure '${ensure}'") }
+		present: { vs_create{$name: in_domain => $in_domain, context => $context, legacy => $legacy, } }
+		running: { vs_create{$name: in_domain => $in_domain, context => $context, legacy => $legacy, } }
+		stopped: { vs_create{$name: in_domain => $in_domain, context => $context, legacy => $legacy, } }
 	}
 
 	file {
@@ -104,6 +102,7 @@ define vserver($ensure, $context, $in_domain = '', $mark = '', $legacy = false) 
 	file {
 		"/etc/vservers/${vs_name}/apps/vunify":
 			ensure => directory,
+			require => Exec["vs_create_${vs_name}"]
 	}
 
 	case $ensure {

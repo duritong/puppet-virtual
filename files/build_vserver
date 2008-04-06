@@ -1,13 +1,14 @@
 #!/bin/bash
 
 NAME=$1
-DOMAIN=$2
+CONTEXT=$2
 
 # create basic vserver
 vserver $NAME build -m debootstrap -- -d etch -m http://ftp.at.debian.org/debian
 
 # default settings
 echo $NAME >/etc/vservers/$NAME/uts/nodename
+echo $CONTEXT >/etc/vservers/$NAME/context
 
 # copy in some some defaults
 TARGET=/etc/vservers/$NAME/vdir/
@@ -17,7 +18,7 @@ cp /etc/apt/{preferences,sources.list} $TARGET/etc/apt/
 # this is needed so puppet can find the puppetmaster and creates the right
 # certificate
 grep -v $NAME /etc/hosts > $TARGET/etc/hosts
-echo "127.0.0.1 $NAME.$DOMAIN $NAME" >> $TARGET/etc/hosts
+echo "127.0.0.1 $NAME" >> $TARGET/etc/hosts
 mkdir -p $TARGET/var/lib/puppet/modules/dbp
 cp /var/lib/puppet/modules/dbp/puppet_current.deb $TARGET/var/lib/puppet/modules/dbp/
 
@@ -29,4 +30,4 @@ vserver $NAME exec apt-get -y install lsb-release iproute
 vserver $NAME exec dpkg --install var/lib/puppet/modules/dbp/puppet_current.deb
 vserver $NAME exec apt-get -fy install
 
-echo "Please sign now: puppetca --sign $NAME.$DOMAIN" >&2
+echo "Please sign now: puppetca --sign $NAME" >&2
