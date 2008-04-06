@@ -6,4 +6,5 @@
 modules_dir{ "virtual": }
 
 import "vserver.pp"
+import "openvpn.pp"
 import "xen.pp"
