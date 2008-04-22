@@ -1,0 +1,4 @@
+#!/bin/bash
+
+time vserver <%= vs_name %> exec puppetd --test --color=false "$*"
+
