@@ -47,9 +47,7 @@ class xen::domain::debian inherits xen::domain::base {
 		"/etc/ld.so.conf.d/nosegneg.conf":
 			ensure => $xen_ensure,
 			content => "hwcap 0 nosegneg\n",
-	case $ensure {
-		'absent': { err("xen::domain configured, but not detected") }
-	}
+    }
 }
 
 class xen::dom0 inherits xen::domain { 
