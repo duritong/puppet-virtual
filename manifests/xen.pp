@@ -13,7 +13,19 @@ class munin::plugins::xen {
 	}
 }
 
+# always check whether xen stuff should be installed!
+include xen::domain
+
 class xen::domain {
+    case $operatingsystem {
+        debian: { include xen::domain::debian }
+        default: { include xen::domain::base }
+    }
+}
+
+class xen::domain::base {} 
+
+class xen::domain::debian inherits xen::domain::base {
 	# install the special libc and parameters to enable it
 	$xen_ensure = $virtual ? {
 		'xen0' => present,
@@ -35,14 +47,20 @@ class xen::domain {
 		"/etc/ld.so.conf.d/nosegneg.conf":
 			ensure => $xen_ensure,
 			content => "hwcap 0 nosegneg\n",
+	case $ensure {
+		'absent': { err("xen::domain configured, but not detected") }
 	}
-
 }
 
-# always check whether xen stuff should be installed!
-include xen::domain
+class xen::dom0 inherits xen::domain { 
+    case $operatingsystem {
+        debian: { include xen::dom0::debian }
+        default: { include xen::dom0::base }
+    }
+}
 
-class xen::dom0 inherits xen::domain {
+class xen::dom0::base {}
+class xen::dom0::debian inherits xen::dom0::base {
 	# install the packages required for managing xen
 	# TODO: this should be followed by a reboot
 	package { 
