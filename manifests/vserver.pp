@@ -10,7 +10,7 @@ class vserver::host {
 
 	file {
 		"/usr/local/bin/build_vserver":
-			source => "puppet://$servername/virtual/build_vserver",
+			source => "puppet://$server/virtual/build_vserver",
 			mode => 0755, owner => root, group => root,
 			require => [ Package['util-vserver'], Package[debootstrap],
 				# this comes from dbp module and is the most current puppet deb
@@ -19,7 +19,7 @@ class vserver::host {
 			ensure => directory,
 			mode => 0755, owner => root, group => root;
 		"/etc/cron.daily/vserver-hashify":
-			source => "puppet://$servername/virtual/hashify.cron.daily",
+			source => "puppet://$server/virtual/hashify.cron.daily",
 			mode => 0755, owner => root, group => root;
 	}
 	
