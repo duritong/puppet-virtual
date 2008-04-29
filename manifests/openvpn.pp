@@ -6,7 +6,11 @@
 # see also http://oldwiki.linux-vserver.org/some_hints_from_john
 # and http://linux-vserver.org/Frequently_Asked_Questions#Can_I_run_an_OpenVPN_Server_in_a_guest.3F
 
-class virtual::openvpn::host_base {
+class virtual::openvpn::base {
+	package { "openvpn": ensure => installed }
+}
+
+class virtual::openvpn::host_base inherits virtual::openvpn::base {
 	package { "openvpn": ensure => installed }
 	modules_dir { "virtual/openvpn": }
 	file {
@@ -36,5 +40,19 @@ define virtual::openvpn::interface($subnet) {
 		$name:
 			up => "/var/lib/puppet/modules/virtual/openvpn/create_interface ${name} ${subnet}",
 			down => "/var/lib/puppet/modules/virtual/openvpn/destroy_interface ${name} ${subnet}" 
+	}
+}
+
+# actually setup the openvpn server within a vserver
+define virtual::openvpn::server($ensure = 'running', $config) {
+	include virtual::openvpn::base
+	file {
+		"/etc/openvpn/${name}.conf":
+			ensure => present, content => $config,
+			mode => 0644, owner => root, group => 0;
+	}
+	service { 'openvpn':
+		ensure => $ensure,
+		hasrestart => true
 	}
 }
