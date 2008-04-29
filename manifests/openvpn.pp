@@ -8,12 +8,33 @@
 
 class virtual::openvpn::host_base {
 	package { "openvpn": ensure => installed }
+	modules_dir { "virtual/openvpn": }
+	file {
+		"/var/lib/puppet/modules/virtual/openvpn/create_interface":
+			source => "puppet://$servername/virtual/create_openvpn_interface",
+			mode => 0755, owner => root, group => 0;
+		"/var/lib/puppet/modules/virtual/openvpn/destroy_interface":
+			source => "puppet://$servername/virtual/destroy_openvpn_interface",
+			mode => 0755, owner => root, group => 0;
+	}
 }
+
 define virtual::openvpn::host() {
 	include virtual::openvpn::host_base
 	exec { "mktun for ${name}":
 		command => "./MAKEDEV tun",
 		cwd => "/etc/vservers/${name}/vdir/dev",
 		creates => "/etc/vservers/${name}/vdir/dev/net/tun";
+	}
+}
+
+# this configures a specific tun interface for the given subnet
+define virtual::openvpn::interface($subnet) {
+	# create and setup the interface if it doesn't exist already
+	# this is a "bit" coarse grained but works for me
+	ifupdown::manual {
+		$name:
+			up => "/var/lib/puppet/modules/virtual/openvpn/create_interface ${name} ${subnet}",
+			down => "/var/lib/puppet/modules/virtual/openvpn/destroy_interface ${name} ${subnet}" 
 	}
 }
