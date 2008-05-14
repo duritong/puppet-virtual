@@ -7,12 +7,11 @@
 # and http://linux-vserver.org/Frequently_Asked_Questions#Can_I_run_an_OpenVPN_Server_in_a_guest.3F
 
 class virtual::openvpn::base {
-	package { "openvpn": ensure => installed }
+	include openvpn
+	modules_dir { "virtual/openvpn": }
 }
 
 class virtual::openvpn::host_base inherits virtual::openvpn::base {
-	package { "openvpn": ensure => installed }
-	modules_dir { "virtual/openvpn": }
 	file {
 		"/var/lib/puppet/modules/virtual/openvpn/create_interface":
 			source => "puppet://$servername/virtual/create_openvpn_interface",
