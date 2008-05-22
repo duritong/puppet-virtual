@@ -43,15 +43,12 @@ define virtual::openvpn::interface($subnet) {
 }
 
 # actually setup the openvpn server within a vserver
-define virtual::openvpn::server($ensure = 'running', $config) {
+define virtual::openvpn::server($config) {
 	include virtual::openvpn::base
 	file {
 		"/etc/openvpn/${name}.conf":
 			ensure => present, content => $config,
-			mode => 0644, owner => root, group => 0;
-	}
-	service { 'openvpn':
-		ensure => $ensure,
-		hasrestart => true
+			mode => 0644, owner => root, group => 0,
+			notify => Service['openvpn'];
 	}
 }
