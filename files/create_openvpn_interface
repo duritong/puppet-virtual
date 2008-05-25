@@ -1,0 +1,10 @@
+#!/bin/bash
+
+DEV="$1"
+SUBNET="$2"
+
+openvpn --mktun --dev "$DEV"
+ip link set dev "$DEV" txqueuelen 100
+ifconfig "$DEV" "$SUBNET".1 pointopoint "$SUBNET".2 mtu 1500
+route add -net "$SUBNET".0 netmask 255.255.255.0 gw "$SUBNET".2
+

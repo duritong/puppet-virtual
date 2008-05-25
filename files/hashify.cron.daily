@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for i in $(cat /etc/vservers/*/name)
+do
+	vserver $i hashify
+done
+
+nice find /var/lib/vservers/.hash/ -type f -links 1 -print0 | sudo xargs -0 rm &

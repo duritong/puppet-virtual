@@ -1,0 +1,9 @@
+#!/bin/bash
+
+DEV="$1"
+SUBNET="$2"
+
+route del -net "$SUBNET".0 netmask 255.255.255.0 gw "$SUBNET".2
+ifconfig "$DEV" down
+openvpn --rmtun --dev "$DEV"
+
