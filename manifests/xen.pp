@@ -21,11 +21,45 @@ class xen::domain {
     }
 }
 
-class xen::domain::base {} 
+class xen::domain::base {
+    service{ [ 'xend', 'xendomains' ]:
+        ensure => running,
+        enable => true,
+        hasstatus => true,
+    }
+    file{'/etc/xen/xend-config.sxp':
+        source => [ "puppet://$server/files/virtual/xen/${fqdn}/config/xend-config.sxp",
+                    "puppet://$server/files/virtual/xen/config/${operatingsystem}/xend-config.sxp",
+                    "puppet://$server/files/virtual/xen/config/xend-config.sxp",
+                    "puppet://$server/virtual/xen/config/${operatingsystem}/xend-config.sxp",
+                    "puppet://$server/virtual/xen/config/xend-config.sxp" ],
+        notify => Service['xend'],
+        owner => root, group => 0, mode => 0644;
+    }
+} 
 
 class xen::domain::centos inherits xen::domain::base {
     package{ 'kernel-xen':
         ensure => present,
+    }
+
+    Service[xend]{
+        require => Package['kernel-xen'],
+    }
+    Service[xendomains]{
+        require => Package['kernel-xen'],
+    }
+
+    file{'/etc/sysconfig/xend':
+        source => "puppet://$server/virtual/xen/${operatingsystem}/sysconfig/xend",
+        notify => Service['xend'],
+        owner => root, group => 0, mode => 0644;
+    }
+
+    file{'/etc/sysconfig/xendomains':
+        source => "puppet://$server/virtual/xen/${operatingsystem}/sysconfig/xendomains",
+        notify => Service['xendomains'],
+        owner => root, group => 0, mode => 0644;
     }
 } 
 
