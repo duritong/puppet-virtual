@@ -29,6 +29,7 @@ class xen::domain::base {
     }
     file{'/etc/xen/xend-config.sxp':
         source => [ "puppet://$server/files/virtual/xen/${fqdn}/config/xend-config.sxp",
+                    "puppet://$server/files/virtual/xen/config/${domain}/xend-config.sxp",
                     "puppet://$server/files/virtual/xen/config/${operatingsystem}/xend-config.sxp",
                     "puppet://$server/files/virtual/xen/config/xend-config.sxp",
                     "puppet://$server/virtual/xen/config/${operatingsystem}/xend-config.sxp",
