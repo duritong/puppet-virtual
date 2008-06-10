@@ -53,7 +53,7 @@ XENDOMAINS_MIGRATE=""
 # (e.g. because you rather shut domains down).
 # If domain saving does succeed, SHUTDOWN will not be executed.
 #
-XENDOMAINS_SAVE=/var/lib/xen/save
+XENDOMAINS_SAVE=
 
 ## Type: string
 ## Default: "--halt --wait"
