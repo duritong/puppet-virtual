@@ -59,14 +59,6 @@ class xen::domain::centos inherits xen::domain::base {
     Service[xend]{
         require => Package['kernel-xen'],
     }
-    case $xen_domains {
-        '0': { info("No xen domains are running, so not configuring service xendomains") } 
-        default: {
-            Service[xendomains]{
-                require => Package['kernel-xen'],
-            }
-        }
-    }
 
     file{'/etc/sysconfig/xend':
         source => "puppet://$server/virtual/xen/${operatingsystem}/sysconfig/xend",
@@ -76,10 +68,21 @@ class xen::domain::centos inherits xen::domain::base {
 
     file{'/etc/sysconfig/xendomains':
         source => "puppet://$server/virtual/xen/${operatingsystem}/sysconfig/xendomains",
-        notify => Service['xendomains'],
         owner => root, group => 0, mode => 0644;
     }
-} 
+
+    case $xen_domains {
+        '0': { info("No xen domains are running, so not configuring service xendomains") } 
+        default: {
+            Service[xendomains]{
+                require => Package['kernel-xen'],
+            }
+            File['/etc/sysconfig/xendomains']{
+                notify => Service[xendomains] 
+            }
+        }
+    } 
+}
 
 class xen::domain::debian inherits xen::domain::base {
 	# This package is i386 only
