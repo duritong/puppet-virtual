@@ -22,11 +22,23 @@ class xen::domain {
 }
 
 class xen::domain::base {
-    service{ [ 'xend', 'xendomains' ]:
+    service{ 'xend':
         ensure => running,
         enable => true,
         hasstatus => true,
     }
+
+    case $xen_domains {
+        '0': { info("No xen domains are running, so not configuring service xendomains") } 
+        default: {
+            service{ 'xendomains':
+                ensure => running,
+                enable => true,
+                hasstatus => true,
+            }
+        }
+    }
+
     file{'/etc/xen/xend-config.sxp':
         source => [ "puppet://$server/files/virtual/xen/${fqdn}/config/xend-config.sxp",
                     "puppet://$server/files/virtual/xen/config/${domain}/xend-config.sxp",
@@ -47,8 +59,13 @@ class xen::domain::centos inherits xen::domain::base {
     Service[xend]{
         require => Package['kernel-xen'],
     }
-    Service[xendomains]{
-        require => Package['kernel-xen'],
+    case $xen_domains {
+        '0': { info("No xen domains are running, so not configuring service xendomains") } 
+        default: {
+            Service[xendomains]{
+                require => Package['kernel-xen'],
+            }
+        }
     }
 
     file{'/etc/sysconfig/xend':
