@@ -14,58 +14,115 @@ class munin::plugins::xen {
 }
 
 class xen::domain {
-	# install the special libc and parameters to enable it
-	$xen_ensure = $virtual ? {
-		'xen0' => present,
-		'xenu' => present,
-		default => 'absent'
-	}
+    case $operatingsystem {
+        debian: { include xen::domain::debian }
+        centos: { include xen::domain::centos }
+        default: { include xen::domain::base }
+    }
+}
 
-	case $ensure {
-		'absent': { err("xen::domain configured, but not detected") }
+class xen::domain::base {
+    service{ 'xend':
+        ensure => running,
+        enable => true,
+        hasstatus => true,
+    }
+
+    case $xen_domains {
+        '0': { info("No xen domains are running, so not configuring service xendomains") } 
+        default: {
+            service{ 'xendomains':
+                ensure => running,
+                enable => true,
+                hasstatus => true,
+            }
+        }
+    }
+
+    file{'/etc/xen/xend-config.sxp':
+        source => [ "puppet://$server/files/virtual/xen/${fqdn}/config/xend-config.sxp",
+                    "puppet://$server/files/virtual/xen/config/${domain}/xend-config.sxp",
+                    "puppet://$server/files/virtual/xen/config/${operatingsystem}/xend-config.sxp",
+                    "puppet://$server/files/virtual/xen/config/xend-config.sxp",
+                    "puppet://$server/virtual/xen/config/${operatingsystem}/xend-config.sxp",
+                    "puppet://$server/virtual/xen/config/xend-config.sxp" ],
+        notify => Service['xend'],
+        owner => root, group => 0, mode => 0644;
+    }
+} 
+
+class xen::domain::centos inherits xen::domain::base {
+    package{ 'kernel-xen':
+        ensure => present,
+    }
+
+    Service[xend]{
+        require => Package['kernel-xen'],
+    }
+
+    file{'/etc/sysconfig/xend':
+        source => "puppet://$server/virtual/xen/${operatingsystem}/sysconfig/xend",
+        notify => Service['xend'],
+        owner => root, group => 0, mode => 0644;
+    }
+
+    file{'/etc/sysconfig/xendomains':
+        source => "puppet://$server/virtual/xen/${operatingsystem}/sysconfig/xendomains",
+        owner => root, group => 0, mode => 0644;
+    }
+
+    case $xen_domains {
+        '0': { info("No xen domains are running, so not configuring service xendomains") } 
+        default: {
+            Service[xendomains]{
+                require => Package['kernel-xen'],
+            }
+            File['/etc/sysconfig/xendomains']{
+                notify => Service[xendomains] 
+            }
+        }
+    } 
+}
+
+class xen::domain::debian inherits xen::domain::base {
 	# This package is i386 only
 	# See also http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=379444
-    }
 	case $architecture {
 		'i386': {
 			package { libc6-xen:
-				ensure => $xen_ensure,
+				ensure => 'present',
 			}
 		}
 	}
 
-	case $operatingsystem {
-		debian: { package { libc6-xen:
-				ensure => $xen_ensure,
-			  }
-			
-			  config_file {
-				"/etc/ld.so.conf.d/nosegneg.conf":
-				ensure => $xen_ensure,
-				content => "hwcap 0 nosegneg\n",
-			  }
-        }
+	config_file {
+		"/etc/ld.so.conf.d/nosegneg.conf":
+			ensure => $xen_ensure,
+			content => "hwcap 0 nosegneg\n",
     }
 }
 
-# always check whether xen stuff should be installed!
-include xen::domain
+class xen::dom0 inherits xen::domain { 
+    case $operatingsystem {
+        debian: { include xen::dom0::debian }
+        centos: { include xen::dom0::centos }
+        default: { include xen::dom0::base }
+    }
+}
 
-class xen::dom0 inherits xen::domain {
+class xen::dom0::base {}
+class xen::dom0::centos inherits xen::dom0::base {
+    package{ [ "xen", "xen-libs"]:
+        ensure => present,
+    }
+}
+class xen::dom0::debian inherits xen::dom0::base {
 	# install the packages required for managing xen
-	# TODO: this should be followed by a reboot
 	package { 
 		[ "xen-hypervisor-3.0.3-1-$architecture",
 		  "linux-image-xen-$architecture",
 		  'libsysfs2' 
 		]:
 			ensure => present
-	}
-
-	case $virtual {
-		'xen0': {}
-		default: {
-			err("dom0 support requested, but not detected. Perhaps you need to reboot ${fqdn}?")
-		}
 	}
 }
